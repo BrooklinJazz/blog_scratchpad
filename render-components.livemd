@@ -1,0 +1,105 @@
+# LiveView Native Render Components
+
+> This guide is for LiveView Native version 0.3.0. Newer versions of LiveView Native may have breaking changes.
+
+LiveView Native is in active development, and the patterns and best practices are still evolving. One of the big changes in `0.3.0` is the introduction of "render components." Now, render component modules define the `render` function that returns the LiveView Native template. The new pattern shifts away from the patterns used in `0.2.0` and earlier when the LiveView module defined the native `render` function. This change makes it easier to define different templates for different formats and to organize the templates in a more scalable way. It also makes it easier to define layouts for different formats more explicitly. However, it does create a small amount of additional boilerplate code that could trip up new developers. In this guide, we'll compare and contrast the old pattern with the new one so you can start building Native UIs.
+
+## The Old Pattern
+
+In the following example from version `0.2.0` below, the LiveView defines the `render` function and uses the `format` key to determine which template to render.
+
+```elixir
+defmodule AppWeb.HelloLive do
+  use AppWeb, :live_view
+  use LiveViewNative.LiveView
+
+  @impl true
+  def render(%{format: :swiftui} = assigns) do
+    ~SWIFTUI"""
+    <Text>Hello SwiftUI!</Text>
+    """
+  end
+
+  def render(assigns) do
+    ~H"""
+    <p>Hello Web!</p>
+    """
+  end
+end
+```
+
+## The New Pattern
+
+The next example from `0.3.0` shows how LiveView Native uses namespaced `.SwiftUI` render component modules. These modules define the `render` function that returns the native template. With the Android format coming soon, we've also moved away from `~SWIFTUI` in favor of a more generic `~LVN` template sigil.
+
+```elixir
+# lib/app_web/hello_live.swiftui.ex
+defmodule AppWeb.HelloLive.SwiftUI do
+  use LiveViewNative.Component,
+    format: :swiftui
+
+  def render(assigns, _interface) do
+    ~LVN"""
+    <Text>Hello, SwiftUI!</Text>
+    """
+  end
+end
+
+# lib/app_web/hello_live.ex
+defmodule AppWeb.HelloLive do
+  use AppWeb, :live_view
+
+  # This configuration defines the format and layout for the native LiveView
+  use LiveViewNative.LiveView,
+    formats: [:swiftui],
+    layouts: [
+      swiftui: {ServerWeb.Layouts.SwiftUI, :app}
+    ]
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <p>Hello Web!</p>
+    """
+  end
+end
+```
+
+## Neex Templates
+
+Instead of defining the template using the `~LVN` string, you can use the new `.neex` (Native + Elixir) templates.
+
+To modify the example above to use `.neex` templates, you would remove the `render` function from the `AppWeb.HelloLive.SwiftUI` module like so:
+
+```elixir
+defmodule AppWeb.HelloLive.SwiftUI do
+  use LiveViewNative.Component,
+    format: :swiftui
+
+  def render(assigns, _interface) do
+    ~LVN"""
+    <Text>Hello, SwiftUI!</Text>
+    """
+  end
+end
+```
+
+Then create a new `lib/app_web/live/swiftui/hello_live.swiftui.neex` file with the following content:
+
+```elixir
+<Text>Hello, SwiftUI!</Text>
+```
+
+## Why move away from the old pattern?
+
+There are a few reasons for the change:
+1. The new pattern encourages better separation of templates, which can grow quite large and result in cluttered LiveViews.
+2. The new pattern makes defining layouts for different formats easier.
+
+However, the new pattern does create a small amount of additional boilerplate code that could trip up new developers. The old pattern was more straightforward to get started building Native UIs because you could define all of the rendering logic within a single LiveView for rapid prototyping, but it often led to cluttered LiveViews as the project grew.
+
+The new pattern requires a small amount of additional boilerplate in exchange for better organization and separation of templates, making it easier to maintain and manage projects as they grow. 
+
+Overall, this design choice is a tradeoff between the simplicity of the old pattern and the better scalability of the new pattern. LiveView Native has decided to prioritize the long-term health of projects over the short-term ease of adoption and slightly faster prototyping. 
+
+Given my position as the educator at [DockYard Academy](https://academy.dockyard.com/), I'm intimately familiar with how much a small change like this can add to the learning curve for a new developer. Frankly, I was one of the most critical of the new pattern, but I am growing to see the positive sides of the choice. Hopefully, this short guide helps reduce any difficulty you might experience so that you can quickly understand and adopt the new pattern.

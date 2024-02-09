@@ -1,0 +1,70 @@
+# Custom Components in LiveView Native
+
+```elixir
+Mix.install(
+  [{:kino_live_view_native, path: "./"}],
+  # [{:kino_live_view_native,  "~> 0.2.2"}],
+  config: [
+    kino_live_view_native: [
+      {ServerWeb.Endpoint,
+       [
+         server: true,
+         url: [host: "localhost"],
+         adapter: Phoenix.Endpoint.Cowboy2Adapter,
+         render_errors: [
+           formats: [html: ServerWeb.ErrorHTML, json: ServerWeb.ErrorJSON],
+           layout: false
+         ],
+         pubsub_server: Server.PubSub,
+         live_view: [signing_salt: "JSgdVVL6"],
+         http: [ip: {127, 0, 0, 1}, port: 4000],
+         secret_key_base: String.duplicate("a", 64),
+         live_reload: [
+           patterns: [
+             ~r/#{__ENV__.file |> String.split("#") |> hd()}$/
+           ]
+         ]
+       ]}
+    ],
+    kino: [
+      group_leader: Process.group_leader()
+    ],
+    live_view_native: [plugins: [LiveViewNative.SwiftUI]],
+    live_view_native_stylesheet: [parsers: [swiftui: LiveViewNative.SwiftUI.RulesParser]]
+  ],
+  force: true
+)
+```
+
+## Overview
+
+UI (User Interface) components are individual elements or building blocks that make up a user interface in a software application.
+
+Components provide numerous valuable benefits. They enhance reusability, saving time and effort while maintaining a consistent appearance across various applications. Additionally, components promote modular design, each serving a well-defined purpose. This, in turn, enhances project organization and encourages effective team collaboration.
+
+This article will teach you how to create your own modular and reusable components for building LiveView Native interfaces with SwiftUI.
+
+## Phoenix Components
+
+First, to understand how to build components in LiveView Native, we need to understand how to build traditional Phoenix components.
+
+The [Phoenix.Component](https://hexdocs.pm/phoenix_live_view/Phoenix.Component.html) module provides the functionality for defining reusable function components within templates.
+
+```elixir
+defmodule MyComponent do
+  # In Phoenix apps, the line is typically: use MyAppWeb, :html
+  use Phoenix.Component
+
+  def greet(assigns) do
+    ~H"""
+    <p>Hello, <%= @name %>!</p>
+    """
+  end
+end
+```
+
+### Attributes
+
+The [attr/3](https://hexdocs.pm/phoenix_live_view/Phoenix.Component.html#attr/3) macro declares attributes for a HEEx function component.
+
+## Native Component
